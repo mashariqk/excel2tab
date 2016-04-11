@@ -34,19 +34,23 @@ public class ConvertToTab {
 		XSSFWorkbook wb = new XSSFWorkbook(excelFile);
 		XSSFSheet sheet = wb.getSheetAt(0);
 		int rowsCount = sheet.getLastRowNum();
-		System.out.println("rowsCount is "+rowsCount);
+		int ordersCounter=0;
+		//create the order object at the beginning. If the PO cell is non null, initialize the object and start filling values in it
+		Order order = null;
+		String uniqueOrderKey = null;
 		for (int i = 0; i <= rowsCount; i++) {
 			XSSFRow row = sheet.getRow(i);
-			int colCounts = row.getLastCellNum();
-			System.out.println("Total Number of Cols: " + colCounts);
+			int colCounts = row.getLastCellNum();					
 			for (int j = 0; j < colCounts; j++) {
 				XSSFCell cell = row.getCell(j);
+
+				// Uncomment below to print the contents on the console
+				/**
 				if(cell != null){
 
 					int cellType = cell.getCellType();
 					String cellValueAsString;
 
-					//Print the contents on the console
 					if(XSSFCell.CELL_TYPE_BLANK == cellType){
 						cellValueAsString = null;
 						System.out.println("CELL_TYPE_BLANK[" + i + "," + j + "]= ''");
@@ -68,16 +72,69 @@ public class ConvertToTab {
 						}                		
 						System.out.println("CELL_TYPE_NUMERIC[" + i + "," + j + "]=" + cell.getNumericCellValue());
 					} else{
-						if(DateUtil.isCellDateFormatted(cell)){
-							SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-							cellValueAsString = sdf.format(cell.getDateCellValue());
-						}else{
-							cellValueAsString = "" + cell.getStringCellValue();
-						}
+
 						System.out.println("CELL_TYPE_STRING[" + i + "," + j + "]=" + cell.getStringCellValue());
 					}
+				}
+				 **/
+				
+				
+				String cellValueAsString = null;
+				int cellType = 9999;
+				try {
+					cellType = cell.getCellType();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}				
+				
+				switch (cellType) {
+				case XSSFCell.CELL_TYPE_BOOLEAN:
+					cellValueAsString = "" +cell.getBooleanCellValue();
+					break;
+				case XSSFCell.CELL_TYPE_ERROR:
+					cellValueAsString = cell.getErrorCellString();
+					break;
+				case XSSFCell.CELL_TYPE_FORMULA:
+					cellValueAsString = cell.getCellFormula();
+					break;
+				case XSSFCell.CELL_TYPE_NUMERIC:
+					cellValueAsString = "" + cell.getNumericCellValue();
+					break;
+				case XSSFCell.CELL_TYPE_STRING:
+					cellValueAsString = cell.getStringCellValue();
+					break;
+				default:
+					cellValueAsString = "";
+					break;
+				}
+
+				//Check For PO
+				if(i != 0 && j==0 && cell != null){
+					order = new Order();
+					ordersCounter++;					
+					uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
+					order.setPO(cellValueAsString);
+					System.out.println("Obtained an Order! With key "+uniqueOrderKey);
+				}
+				
+				//Check For Sold To
+				if(i != 0 && j==1 && cell != null){
+					order.setSoldTo(cellValueAsString);
+				}
+				
+				//Check For Ship To
+				if(i != 0 && j==2 && cell != null){
+					order.setShipTo(cellValueAsString);
+				}
+				
+				//Check For Dropship Indicator
+				if(i != 0 && j==3 && cell != null){
+					order.setDropshipIndicator(cellValueAsString);
+				}
+
 			}
 		}
+		wb.close();
 	}
 }
