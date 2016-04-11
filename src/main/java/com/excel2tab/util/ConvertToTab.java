@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -181,5 +182,19 @@ public class ConvertToTab {
 		}
 		System.out.println("All Done! Closing work book");
 		wb.close();
+	}
+	
+	public void displayExtractedOrders(List<Order> orders){
+		System.out.println("\n\n\n\n\n");
+		System.out.println("Below is the summary of extracted orders from the excel file: \n\n");
+		for(Order order:orders){
+			System.out.println("Header Data");
+			System.out.println("PO "+order.getPO());
+			System.out.println("soldTo"+order.getSoldTo());
+			System.out.println("shipTo "+order.getShipTo());
+			System.out.println("dropshipIndicator "+order.getDropshipIndicator());
+			System.out.println("requestedDelivery "+order.getRequestedDelivery());
+			System.out.println("internalNotes "+order.getInternalNotes());
+		}
 	}
 }
