@@ -24,7 +24,7 @@ public class ConvertToTab {
 
 		Properties props = new Properties();
 		File excelFile =null;
-		ArrayList<Order> orders;
+		ArrayList<Order> orders = null;
 		try{
 			InputStream resourceStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("project.properties");
 			props.load(resourceStream);
@@ -53,12 +53,12 @@ public class ConvertToTab {
 		int ordersCounter=0;
 		String uniqueOrderKey = null;
 		Iterator<Row> rowIterator = sheet.rowIterator();
+		Order order = null;
+		OrderLines line = null;
+		ArrayList<OrderLines> lines = null;
 		while(rowIterator.hasNext()){
 			XSSFRow row = (XSSFRow) rowIterator.next();
-			Iterator<Cell> cellIterator = row.cellIterator();
-			Order order = null;
-			OrderLines line = null;
-			ArrayList<OrderLines> lines = null;
+			Iterator<Cell> cellIterator = row.cellIterator();			
 			if(row.getRowNum() != 0 && row.getCell(0) != null){
 				String cellValueAsString = null;
 				int cellType = 9999;
@@ -182,9 +182,10 @@ public class ConvertToTab {
 		}
 		System.out.println("All Done! Closing work book");
 		wb.close();
+		displayExtractedOrders(orders);
 	}
 	
-	public void displayExtractedOrders(List<Order> orders){
+	public static void displayExtractedOrders(List<Order> orders){
 		System.out.println("\n\n\n\n\n");
 		System.out.println("Below is the summary of extracted orders from the excel file: \n\n");
 		for(Order order:orders){
