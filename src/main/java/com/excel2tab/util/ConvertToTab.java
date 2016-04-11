@@ -4,15 +4,20 @@ import java.io.File;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Properties;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ConvertToTab {
+
+
 
 	public static void main (String[] args) throws Exception {
 
@@ -26,6 +31,17 @@ public class ConvertToTab {
 			e.printStackTrace();
 		}
 
+		int POColumnIndex = Integer.parseInt(props.getProperty("POColumnIndex"));
+		int soldToColumnIndex = Integer.parseInt(props.getProperty("soldToColumnIndex"));
+		int shipToColumnIndex = Integer.parseInt(props.getProperty("shipToColumnIndex"));
+		int dropshipIndicatorColumnIndex = Integer.parseInt(props.getProperty("dropshipIndicatorColumnIndex"));
+		int requestedDeliveryColumnIndex = Integer.parseInt(props.getProperty("requestedDeliveryColumnIndex"));
+		int internalNotesColumnIndex = Integer.parseInt(props.getProperty("internalNotesColumnIndex"));
+		int productCodeColumnIndex = Integer.parseInt(props.getProperty("productCodeColumnIndex"));
+		int quantityColumnIndex = Integer.parseInt(props.getProperty("quantityColumnIndex"));
+		int routeColumnIndex = Integer.parseInt(props.getProperty("routeColumnIndex"));
+
+
 		try {
 			excelFile = new File(props.getProperty("inputExcel"));
 		} catch (Exception e) {
@@ -33,61 +49,81 @@ public class ConvertToTab {
 		}
 		XSSFWorkbook wb = new XSSFWorkbook(excelFile);
 		XSSFSheet sheet = wb.getSheetAt(0);
-		int rowsCount = sheet.getLastRowNum();
 		int ordersCounter=0;
-		//create the order object at the beginning. If the PO cell is non null, initialize the object and start filling values in it
-		Order order = null;
 		String uniqueOrderKey = null;
-		for (int i = 0; i <= rowsCount; i++) {
-			XSSFRow row = sheet.getRow(i);
-			int colCounts = row.getLastCellNum();					
-			for (int j = 0; j < colCounts; j++) {
-				XSSFCell cell = row.getCell(j);
+		Iterator<Row> rowIterator = sheet.rowIterator();
+		while(rowIterator.hasNext()){
+			XSSFRow row = (XSSFRow) rowIterator.next();
+			Iterator<Cell> cellIterator = row.cellIterator();
+			Order order = null;
+			OrderLines line = null;
+			ArrayList<OrderLines> lines = null;
+			if(row.getRowNum() != 0 && row.getCell(0) != null){
+				String cellValueAsString = null;
+				int cellType = 9999;
+				try {
+					cellType = row.getCell(0).getCellType();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}				
 
-				// Uncomment below to print the contents on the console
-				/**
-				if(cell != null){
+				switch (cellType) {
+				case XSSFCell.CELL_TYPE_BOOLEAN:
+					cellValueAsString = "" +row.getCell(0).getBooleanCellValue();
+					break;
+				case XSSFCell.CELL_TYPE_ERROR:
+					cellValueAsString = row.getCell(0).getErrorCellString();
+					break;
+				case XSSFCell.CELL_TYPE_FORMULA:
+					cellValueAsString = row.getCell(0).getCellFormula();
+					break;
+				case XSSFCell.CELL_TYPE_NUMERIC:
+					cellValueAsString = "" + row.getCell(0).getNumericCellValue();
+					break;
+				case XSSFCell.CELL_TYPE_STRING:
+					cellValueAsString = row.getCell(0).getStringCellValue();
+					break;
+				default:
+					cellValueAsString = "";
+					break;
+				}
 
-					int cellType = cell.getCellType();
-					String cellValueAsString;
+				if(uniqueOrderKey == null){
+					//This is the first order
+					ordersCounter++;
+					uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
+					order = new Order();
+				}else{
+					//This is not the first Order. Create a new temp key and validate
+					String tempKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
 
-					if(XSSFCell.CELL_TYPE_BLANK == cellType){
-						cellValueAsString = null;
-						System.out.println("CELL_TYPE_BLANK[" + i + "," + j + "]= ''");
-					} else if(XSSFCell.CELL_TYPE_BOOLEAN == cellType){
-						cellValueAsString = "" +cell.getBooleanCellValue();
-						System.out.println("CELL_TYPE_BOOLEAN[" + i + "," + j + "]=" + cell.getBooleanCellValue());
-					} else if(XSSFCell.CELL_TYPE_ERROR == cellType){
-						cellValueAsString = cell.getErrorCellString();
-						System.out.println("CELL_TYPE_ERROR[" + i + "," + j + "]=" + cell.getErrorCellString());
-					} else if(XSSFCell.CELL_TYPE_FORMULA == cellType){
-						cellValueAsString = cell.getCellFormula();
-						System.out.println("CELL_TYPE_FORMULA[" + i + "," + j + "]=" + cell.getCellFormula());
-					} else if(XSSFCell.CELL_TYPE_NUMERIC == cellType){
-						if(DateUtil.isCellDateFormatted(cell)){
-							SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-							cellValueAsString = sdf.format(cell.getDateCellValue());
-						}else{
-							cellValueAsString = "" + cell.getNumericCellValue();
-						}                		
-						System.out.println("CELL_TYPE_NUMERIC[" + i + "," + j + "]=" + cell.getNumericCellValue());
-					} else{
-
-						System.out.println("CELL_TYPE_STRING[" + i + "," + j + "]=" + cell.getStringCellValue());
+					//Only create a new object if the temp key is different from the unique key
+					if(!tempKey.equals(uniqueOrderKey)){
+						ordersCounter++;
+						uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
+						order.setLines(lines);
+						order = new Order();
+						line = null;
+						lines = null;
 					}
 				}
-				 **/
-				
+			}
+			while(cellIterator.hasNext()){
+				XSSFCell cell = (XSSFCell) cellIterator.next();
+				if(order == null) continue;
 				
 				String cellValueAsString = null;
 				int cellType = 9999;
+
 				try {
 					cellType = cell.getCellType();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}				
-				
+					continue;
+				}	
+
 				switch (cellType) {
 				case XSSFCell.CELL_TYPE_BOOLEAN:
 					cellValueAsString = "" +cell.getBooleanCellValue();
@@ -109,32 +145,41 @@ public class ConvertToTab {
 					break;
 				}
 
-				//Check For PO
-				if(i != 0 && j==0 && cell != null){
-					order = new Order();
-					ordersCounter++;					
-					uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
-					order.setPO(cellValueAsString);
-					System.out.println("Obtained an Order! With key "+uniqueOrderKey);
+				int cellNum = cell.getColumnIndex();
+
+				if(cellNum == POColumnIndex) order.setPO(cellValueAsString);
+				if(cellNum == soldToColumnIndex) order.setSoldTo(cellValueAsString);
+				if(cellNum == shipToColumnIndex) order.setShipTo(cellValueAsString);
+				if(cellNum == dropshipIndicatorColumnIndex) order.setDropshipIndicator(cellValueAsString);
+				if(cellNum == requestedDeliveryColumnIndex) {
+					if(cellType == XSSFCell.CELL_TYPE_NUMERIC){
+						if(DateUtil.isCellDateFormatted(cell)){
+							SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+							order.setRequestedDelivery(sdf.format(cell.getDateCellValue()));
+						}
+					}else{
+						order.setRequestedDelivery(cellValueAsString);
+					}
 				}
-				
-				//Check For Sold To
-				if(i != 0 && j==1 && cell != null){
-					order.setSoldTo(cellValueAsString);
+				if(cellNum == internalNotesColumnIndex) order.setInternalNotes(cellValueAsString);
+				if(cellNum == productCodeColumnIndex){
+					if(line == null){
+						line = new OrderLines();
+					} else{
+						if(lines == null){
+							lines = new ArrayList<OrderLines>(); 
+						}
+						lines.add(line);
+						line = new OrderLines();
+					}
+					line.setProductCode(cellValueAsString);
 				}
-				
-				//Check For Ship To
-				if(i != 0 && j==2 && cell != null){
-					order.setShipTo(cellValueAsString);
-				}
-				
-				//Check For Dropship Indicator
-				if(i != 0 && j==3 && cell != null){
-					order.setDropshipIndicator(cellValueAsString);
-				}
+				if(cellNum == quantityColumnIndex) line.setQuantity(cellValueAsString);
+				if(cellNum == routeColumnIndex) line.setRoute(cellValueAsString);
 
 			}
 		}
+		System.out.println("All Done! Closing work book");
 		wb.close();
 	}
 }
