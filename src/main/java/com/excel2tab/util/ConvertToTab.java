@@ -36,6 +36,7 @@ public class ConvertToTab {
 		int soldToColumnIndex = Integer.parseInt(props.getProperty("soldToColumnIndex"));
 		int shipToColumnIndex = Integer.parseInt(props.getProperty("shipToColumnIndex"));
 		int dropshipIndicatorColumnIndex = Integer.parseInt(props.getProperty("dropshipIndicatorColumnIndex"));
+		int dropshipPoColumnIndex = Integer.parseInt(props.getProperty("dropshipPoColumnIndex"));
 		int requestedDeliveryColumnIndex = Integer.parseInt(props.getProperty("requestedDeliveryColumnIndex"));
 		int internalNotesColumnIndex = Integer.parseInt(props.getProperty("internalNotesColumnIndex"));
 		int productCodeColumnIndex = Integer.parseInt(props.getProperty("productCodeColumnIndex"));
@@ -104,6 +105,8 @@ public class ConvertToTab {
 						ordersCounter++;
 						uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
 						order.setLines(lines);
+						if(orders == null) orders = new ArrayList<Order>();
+						orders.add(order);
 						order = new Order();
 						line = null;
 						lines = null;
@@ -152,6 +155,7 @@ public class ConvertToTab {
 				if(cellNum == soldToColumnIndex) order.setSoldTo(cellValueAsString);
 				if(cellNum == shipToColumnIndex) order.setShipTo(cellValueAsString);
 				if(cellNum == dropshipIndicatorColumnIndex) order.setDropshipIndicator(cellValueAsString);
+				if(cellNum == dropshipPoColumnIndex) order.setDropshipPo(cellValueAsString);
 				if(cellNum == requestedDeliveryColumnIndex) {
 					if(cellType == XSSFCell.CELL_TYPE_NUMERIC){
 						if(DateUtil.isCellDateFormatted(cell)){
@@ -189,13 +193,13 @@ public class ConvertToTab {
 		System.out.println("\n\n\n\n\n");
 		System.out.println("Below is the summary of extracted orders from the excel file: \n\n");
 		for(Order order:orders){
-			System.out.println("Header Data");
-			System.out.println("PO "+order.getPO());
-			System.out.println("soldTo"+order.getSoldTo());
-			System.out.println("shipTo "+order.getShipTo());
-			System.out.println("dropshipIndicator "+order.getDropshipIndicator());
-			System.out.println("requestedDelivery "+order.getRequestedDelivery());
-			System.out.println("internalNotes "+order.getInternalNotes());
+			System.out.println("Header Data: ");
+			System.out.println("PO: "+order.getPO());
+			System.out.println("soldTo: "+order.getSoldTo());
+			System.out.println("shipTo: "+order.getShipTo());
+			System.out.println("dropshipIndicator: "+order.getDropshipIndicator());
+			System.out.println("requestedDelivery: "+order.getRequestedDelivery());
+			System.out.println("internalNotes: "+order.getInternalNotes());
 		}
 	}
 }

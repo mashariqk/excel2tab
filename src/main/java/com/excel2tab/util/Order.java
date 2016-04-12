@@ -14,6 +14,7 @@ public class Order {
 	private String soldTo;
 	private String shipTo;
 	private String dropshipIndicator;
+	private String dropshipPo;	
 	private String requestedDelivery;
 	private String internalNotes;
 	private List<OrderLines> lines;
@@ -41,6 +42,12 @@ public class Order {
 	}
 	public void setDropshipIndicator(String dropshipIndicator) {
 		this.dropshipIndicator = dropshipIndicator;
+	}
+	public String getDropshipPo() {
+		return dropshipPo;
+	}
+	public void setDropshipPo(String dropshipPo) {
+		this.dropshipPo = dropshipPo;
 	}
 	public String getRequestedDelivery() {
 		return requestedDelivery;
