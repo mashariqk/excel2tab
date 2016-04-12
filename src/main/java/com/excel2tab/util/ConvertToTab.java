@@ -200,6 +200,15 @@ public class ConvertToTab {
 			System.out.println("dropshipIndicator: "+order.getDropshipIndicator());
 			System.out.println("requestedDelivery: "+order.getRequestedDelivery());
 			System.out.println("internalNotes: "+order.getInternalNotes());
+			System.out.println("\n\n");
+			System.out.println("Line Data: ");
+			int i=0;
+			for(OrderLines line: order.getLines()){
+				System.out.println("Line #"+ ++i);
+				System.out.println("Product Code: "+line.getProductCode());
+				System.out.println("Product Quantity: "+line.getQuantity());
+				System.out.println("Route Code: "+line.getRoute());
+			}
 		}
 	}
 }
