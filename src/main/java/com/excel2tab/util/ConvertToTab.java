@@ -114,13 +114,7 @@ public class ConvertToTab {
 						lines = null;
 					}
 				}
-			} else if(lastRowIndex == row.getRowNum()){
-				if(lines == null) lines = new ArrayList<OrderLines>(); 
-				lines.add(line);
-				order.setLines(lines);
-				if(orders == null) orders = new ArrayList<Order>();
-				orders.add(order);
-			}
+			} 
 			while(cellIterator.hasNext()){
 				XSSFCell cell = (XSSFCell) cellIterator.next();
 				if(order == null) continue;
@@ -189,6 +183,14 @@ public class ConvertToTab {
 				}
 				if(cellNum == quantityColumnIndex) line.setQuantity(cellValueAsString);
 				if(cellNum == routeColumnIndex) line.setRoute(cellValueAsString);
+				
+				if(!cellIterator.hasNext() && lastRowIndex == row.getRowNum()){
+					if(lines == null) lines = new ArrayList<OrderLines>(); 
+					lines.add(line);
+					order.setLines(lines);
+					if(orders == null) orders = new ArrayList<Order>();
+					orders.add(order);
+				}
 
 			}
 		}
@@ -200,7 +202,10 @@ public class ConvertToTab {
 	public static void displayExtractedOrders(List<Order> orders){
 		System.out.println("\n\n\n\n\n");
 		System.out.println("Below is the summary of extracted orders from the excel file: \n\n");
+		int i=0;
 		for(Order order:orders){
+			System.out.println("\n\n");
+			System.out.println("Order #"+ ++i);
 			System.out.println("Header Data: ");
 			System.out.println("PO: "+order.getPO());
 			System.out.println("soldTo: "+order.getSoldTo());
@@ -210,9 +215,9 @@ public class ConvertToTab {
 			System.out.println("internalNotes: "+order.getInternalNotes());
 			System.out.println("\n\n");
 			System.out.println("Line Data: ");
-			int i=0;
+			int j=0;
 			for(OrderLines line: order.getLines()){
-				System.out.println("Line #"+ ++i);
+				System.out.println("Line #"+ ++j);
 				System.out.println("Product Code: "+line.getProductCode());
 				System.out.println("Product Quantity: "+line.getQuantity());
 				System.out.println("Route Code: "+line.getRoute());
