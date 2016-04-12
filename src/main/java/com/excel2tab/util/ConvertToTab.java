@@ -42,7 +42,7 @@ public class ConvertToTab {
 		int productCodeColumnIndex = Integer.parseInt(props.getProperty("productCodeColumnIndex"));
 		int quantityColumnIndex = Integer.parseInt(props.getProperty("quantityColumnIndex"));
 		int routeColumnIndex = Integer.parseInt(props.getProperty("routeColumnIndex"));
-
+		
 
 		try {
 			excelFile = new File(props.getProperty("inputExcel"));
@@ -51,6 +51,7 @@ public class ConvertToTab {
 		}
 		XSSFWorkbook wb = new XSSFWorkbook(excelFile);
 		XSSFSheet sheet = wb.getSheetAt(0);
+		int lastRowIndex = sheet.getLastRowNum();
 		int ordersCounter=0;
 		String uniqueOrderKey = null;
 		Iterator<Row> rowIterator = sheet.rowIterator();
@@ -59,8 +60,8 @@ public class ConvertToTab {
 		ArrayList<OrderLines> lines = null;
 		while(rowIterator.hasNext()){
 			XSSFRow row = (XSSFRow) rowIterator.next();
-			Iterator<Cell> cellIterator = row.cellIterator();			
-			if(row.getRowNum() != 0 && row.getCell(0) != null){
+			Iterator<Cell> cellIterator = row.cellIterator();	
+			if(row.getRowNum() != 0 && row.getCell(0) != null && lastRowIndex != row.getRowNum()){
 				String cellValueAsString = null;
 				int cellType = 9999;
 				try {
@@ -104,6 +105,7 @@ public class ConvertToTab {
 					if(!tempKey.equals(uniqueOrderKey)){
 						ordersCounter++;
 						uniqueOrderKey = ordersCounter + props.getProperty("uniqueKeyJoiner") + cellValueAsString;
+						lines.add(line);
 						order.setLines(lines);
 						if(orders == null) orders = new ArrayList<Order>();
 						orders.add(order);
@@ -112,6 +114,12 @@ public class ConvertToTab {
 						lines = null;
 					}
 				}
+			} else if(lastRowIndex == row.getRowNum()){
+				if(lines == null) lines = new ArrayList<OrderLines>(); 
+				lines.add(line);
+				order.setLines(lines);
+				if(orders == null) orders = new ArrayList<Order>();
+				orders.add(order);
 			}
 			while(cellIterator.hasNext()){
 				XSSFCell cell = (XSSFCell) cellIterator.next();
