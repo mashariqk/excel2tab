@@ -1,7 +1,11 @@
 package com.excel2tab.util;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,11 +22,11 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ConvertToTab {
 
-
+	static Properties props = null;
 
 	public static void main (String[] args) throws Exception {
 
-		Properties props = new Properties();
+		props = new Properties();
 		File excelFile =null;
 		ArrayList<Order> orders = null;
 		try{
@@ -42,7 +46,7 @@ public class ConvertToTab {
 		int productCodeColumnIndex = Integer.parseInt(props.getProperty("productCodeColumnIndex"));
 		int quantityColumnIndex = Integer.parseInt(props.getProperty("quantityColumnIndex"));
 		int routeColumnIndex = Integer.parseInt(props.getProperty("routeColumnIndex"));
-		
+
 
 		try {
 			excelFile = new File(props.getProperty("inputExcel"));
@@ -67,7 +71,6 @@ public class ConvertToTab {
 				try {
 					cellType = row.getCell(0).getCellType();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}				
 
@@ -118,14 +121,13 @@ public class ConvertToTab {
 			while(cellIterator.hasNext()){
 				XSSFCell cell = (XSSFCell) cellIterator.next();
 				if(order == null) continue;
-				
+
 				String cellValueAsString = null;
 				int cellType = 9999;
 
 				try {
 					cellType = cell.getCellType();
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					continue;
 				}	
@@ -183,7 +185,7 @@ public class ConvertToTab {
 				}
 				if(cellNum == quantityColumnIndex) line.setQuantity(cellValueAsString);
 				if(cellNum == routeColumnIndex) line.setRoute(cellValueAsString);
-				
+
 				if(!cellIterator.hasNext() && lastRowIndex == row.getRowNum()){
 					if(lines == null) lines = new ArrayList<OrderLines>(); 
 					lines.add(line);
@@ -194,11 +196,124 @@ public class ConvertToTab {
 
 			}
 		}
-		System.out.println("All Done! Closing work book");
+		createTabDelimitedFile(orders);
 		wb.close();
 		displayExtractedOrders(orders);
 	}
-	
+
+	public static void createTabDelimitedFile(List<Order> orders){
+		StringBuffer tempBufferForFile = new StringBuffer();
+		tempBufferForFile.append(instantiateFileForSAP(new StringBuffer()));
+		for(Order order:orders){
+			tempBufferForFile.append(headerAddendum(new StringBuffer()));
+			tempBufferForFile.append(order.getPO());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getSoldTo());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getShipTo());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getDropshipIndicator());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getDropshipPo());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(props.getProperty("orderReason"));
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(props.getProperty("POType"));
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getRequestedDelivery());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(order.getInternalNotes());
+			tempBufferForFile.append("\t");
+			tempBufferForFile.append(props.getProperty("fakeUserEmail"));
+			tempBufferForFile.append("\n");
+			for(OrderLines line: order.getLines()){
+				tempBufferForFile.append(lineAddendum(new StringBuffer()));
+				tempBufferForFile.append(line.getProductCode());
+				tempBufferForFile.append("\t");
+				tempBufferForFile.append(line.getQuantity());
+				tempBufferForFile.append("\t");
+				tempBufferForFile.append(props.getProperty("fakeUOM"));
+				tempBufferForFile.append("\t");
+				tempBufferForFile.append(line.getRoute());
+				tempBufferForFile.append("\n");
+			}
+		}
+
+		try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+				new FileOutputStream(props.getProperty("targetTabbedFile")), props.getProperty("targetTabbedCharSet")))) {
+			writer.write(tempBufferForFile.toString());
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+
+	}
+
+	public static String instantiateFileForSAP(StringBuffer instantiationBuffer){
+		instantiationBuffer.append("E");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append(props.getProperty("headerEmail"));
+		instantiationBuffer.append("\n");
+		instantiationBuffer.append("CH");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Order Type");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Salesorg");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Dis");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Div");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("PO");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Sold-to");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Ship to");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Dropship");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Drop-ship PO");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Order reason");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("PO type");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Req Deliv");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Header internal notes");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("User Email");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Product");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("Quantity");
+		instantiationBuffer.append("\t");
+		instantiationBuffer.append("UOM");
+		instantiationBuffer.append("\t");		
+		instantiationBuffer.append("Route");	
+		instantiationBuffer.append("\n");	
+		return instantiationBuffer.toString();
+	}
+
+	public static String headerAddendum(StringBuffer sbHeader){
+		sbHeader.append("H");
+		sbHeader.append("\t");
+		sbHeader.append(props.getProperty("orderType"));
+		sbHeader.append("\t");
+		sbHeader.append(props.getProperty("salesOrg"));
+		sbHeader.append("\t");
+		sbHeader.append(props.getProperty("dis"));
+		sbHeader.append("\t");
+		sbHeader.append(props.getProperty("div"));
+		sbHeader.append("\t");
+		return sbHeader.toString();
+	}
+
+	public static String lineAddendum(StringBuffer sbLine){
+		sbLine.append("I");
+		for(int i=0; i < Integer.parseInt(props.getProperty("tabsAtLineStart")); i++) sbLine.append("\t");
+		return sbLine.toString();
+	}
+
 	public static void displayExtractedOrders(List<Order> orders){
 		System.out.println("\n\n\n\n\n");
 		System.out.println("Below is the summary of extracted orders from the excel file: \n\n");
